@@ -6,15 +6,60 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-kit/log"
 	"github.com/grafana/alloy/internal/component"
 	"github.com/grafana/alloy/internal/component/common/kubernetes"
 	"github.com/grafana/alloy/internal/component/prometheus/exporter"
+	"github.com/grafana/alloy/internal/featuregate"
 	"github.com/grafana/alloy/internal/service/cluster"
+	"github.com/grafana/alloy/internal/static/integrations"
 	"github.com/grafana/ckit/shard"
+
+	// "k8s.io/client-go/tools/cache"
+
 	"k8s.io/kube-state-metrics/v2/pkg/builder"
-	// "k8s.io/kube-state-metrics/v2/pkg/metricsstore"
+	metricsstore "k8s.io/kube-state-metrics/v2/pkg/metrics_store"
 	"k8s.io/kube-state-metrics/v2/pkg/options"
+
+	"github.com/grafana/alloy/internal/static/integrations/cadvisor"
+	kube "k8s.io/client-go/kubernetes"
 )
+
+func init() {
+	component.Register(component.Registration{
+		Name:      "prometheus.exporter.kubestate",
+		Stability: featuregate.StabilityGenerallyAvailable,
+		Args:      Arguments{},
+		Exports:   exporter.Exports{},
+
+		Build: exporter.New(createExporter, "kubestate"),
+	})
+}
+
+func createExporter(opts component.Options, args component.Arguments, defaultInstanceKey string) (integrations.Integration, string, error) {
+	a := args.(Arguments)
+	return integrations.NewIntegrationWithInstanceKey(opts.Logger, a.Convert(), defaultInstanceKey)
+}
+
+// TODO: replace cadvisor with kubestate
+func (a *Arguments) Convert() *cadvisor.Config {
+	// if len(a.PollFrequency) == 0 {
+	// 	a.PollFrequency = string{""}
+	// }
+	// if len(a.PollTimeout) == 0 {
+	// 	a.PollTimeout = string{""}
+	// }
+
+	cfg := &cadvisor.Config{
+		// Client:         a.Client,
+		// PollFrequency:  a.PollFrequency,
+		// PollTimeout:    a.PollTimeout,
+		// Clustering:     a.Clustering,
+		// HTTPListenPort: a.HTTPListenPort,
+	}
+
+	return cfg
+}
 
 // DefaultArguments holds the default settings for the prometheus.exporter.kubestate component.
 var DefaultArguments = Arguments{
@@ -39,6 +84,8 @@ type Arguments struct {
 
 	// Clustering configuration for leader election
 	Clustering cluster.ComponentBlock `alloy:"clustering,block,optional"`
+
+	HTTPListenPort int `river:"http_listen_port,attr"`
 }
 
 func (a *Arguments) SetToDefault() {
@@ -47,6 +94,7 @@ func (a *Arguments) SetToDefault() {
 
 // Component implements the prometheus.exporter.kubestate component.
 type Component struct {
+	log        log.Logger
 	opts       component.Options
 	args       Arguments
 	builder    *builder.Builder
@@ -105,59 +153,90 @@ func New(o component.Options, args Arguments) (*Component, error) {
 	}, nil
 }
 
+func toResourceSet(resources []string) options.ResourceSet {
+	rs := make(options.ResourceSet)
+	for _, r := range resources {
+		rs[r] = struct{}{}
+	}
+	return rs
+}
+
 // Run starts the prometheus.exporter.kubestate component.
 func (c *Component) Run(ctx context.Context) error {
 	// Create Kubernetes client config
-	config, err := c.args.Client.BuildRESTConfig()
+	config, err := c.args.Client.BuildRESTConfig(c.log)
 	if err != nil {
 		return fmt.Errorf("building Kubernetes client config: %w", err)
 	}
 
+	kubeClient, err := kube.NewForConfig(config)
+	if err != nil {
+		return fmt.Errorf("failed to create kubeClient: %w", err)
+	}
+
+	// discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to create discoveryClient: %w", err)
+	// }
+
 	// Create kube-state-metrics builder
 	ksmOptions := options.NewOptions()
 	if len(c.args.Resources) > 0 {
-		ksmOptions.Resources = c.args.Resources
+		ksmOptions.Resources = toResourceSet(c.args.Resources)
 	}
 
 	c.builder = builder.NewBuilder()
-	c.builder.WithKubeConfig(config)
+	// c.builder.WithKubeConfig(config)
+	c.builder.WithKubeClient(kubeClient)
 	c.builder.WithNamespaces(options.DefaultNamespaces)
 	c.builder.WithSharding(0, 1)
 	c.builder.WithContext(ctx)
 
 	// Build stores
-	c.stores, err = c.builder.Build()
+	// c.stores = c.builder.Build()
+	writers := c.builder.Build()
+
+	c.stores = make([]*metricsstore.MetricsStore, 0, len(writers))
 	if err != nil {
 		return fmt.Errorf("building kube-state-metrics stores: %w", err)
 	}
 
 	// Start stores
 	for _, store := range c.stores {
-		store.Start()
+		// store.Start()
+		store.List()
 	}
 
 	// Create HTTP server for metrics endpoint
 	mux := http.NewServeMux()
-	mux.Handle("/metrics", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Only serve metrics if we are the leader
-		if !c.leader.isLeader() {
-			http.Error(w, "Not the leader", http.StatusServiceUnavailable)
-			return
+	// mux.Handle("/metrics", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// 	// Only serve metrics if we are the leader
+	// 	if !c.leader.isLeader() {
+	// 		http.Error(w, "Not the leader", http.StatusServiceUnavailable)
+	// 		return
+	// 	}
+	// 	for _, store := range c.stores {
+	// 		store.WriteAll(w)
+	// 	}
+	// }))
+
+	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		for _, writer := range writers {
+			writer.WriteAll(w)
 		}
-		for _, store := range c.stores {
-			store.WriteAll(w)
-		}
-	}))
+	})
 
 	c.httpServer = &http.Server{
-		Addr:    fmt.Sprintf(":%d", c.opts.HTTPListenPort),
+		// Addr:    fmt.Sprintf(":%d", c.opts.HTTPListenPort),
+		Addr:    fmt.Sprintf(":%d", c.args.HTTPListenPort),
 		Handler: mux,
 	}
 
 	// Start HTTP server
 	go func() {
 		if err := c.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			c.opts.Logger.Error("HTTP server error", "error", err)
+			// c.opts.Logger.Error("HTTP server error", "error", err)
+			c.opts.Logger.Log("HTTP server error", "error", err)
 		}
 	}()
 
@@ -173,11 +252,12 @@ func (c *Component) Run(ctx context.Context) error {
 			case <-ticker.C:
 				changed, err := c.leader.update()
 				if err != nil {
-					c.opts.Logger.Error("Failed to check leadership", "error", err)
+					// c.opts.Logger.Error("Failed to check leadership", "error", err)
+					c.opts.Logger.Log("Failed to check leadership", "error", err)
 					continue
 				}
 				if changed {
-					c.opts.Logger.Info("Leadership status changed", "is_leader", c.leader.isLeader())
+					c.opts.Logger.Log("Leadership status changed", "is_leader", c.leader.isLeader())
 				}
 			}
 		}
@@ -200,5 +280,6 @@ func (c *Component) Name() string {
 
 // Exports returns the values exported by the component.
 func (c *Component) Exports() map[string]interface{} {
-	return exporter.DefaultExports(c.opts)
+	// return exporter.DefaultExports(c.opts)
+	return c.Exports()
 }

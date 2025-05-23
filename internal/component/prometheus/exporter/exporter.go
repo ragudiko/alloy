@@ -17,7 +17,9 @@ import (
 	http_service "github.com/grafana/alloy/internal/service/http"
 	"github.com/grafana/alloy/internal/static/integrations"
 
-	kubestate "github.com/grafana/alloy/internal/component/prometheus/exporter/kubestate"
+	// kubestate "github.com/grafana/alloy/internal/component/prometheus/exporter/kubestate"
+	//prometheus_exporter "github.com/grafana/alloy/internal/component/prometheus/exporter"
+	//"github.com/grafana/alloy/internal/component"
 )
 
 // Creator is a function provided by an implementation to create a concrete exporter instance.
@@ -193,8 +195,13 @@ func defaultInstance() string {
 	return hostname
 }
 
-func init() {
-	// other exporters...
-	prometheus_exporter.Register("kubestate", kubestate.New) // <- add this line
-}
-
+// func init() {
+// 	Register("kubestate", func(opts component.Options, args component.Arguments) (component.Component, error) {
+// 		a := args.(kubestate.Arguments)
+// 		reg, err := kubestate.Build(a)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		return New(opts, reg), nil
+// 	})
+// }
