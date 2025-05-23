@@ -1,0 +1,15 @@
+package kubestate
+
+import (
+    "github.com/grafana/alloy/internal/component"
+)
+
+func init() {
+    component.Register(component.Registration{
+        Name: "prometheus.exporter.kubestate",
+        Args: Arguments{},
+        Build: func(opts component.Options, args component.Arguments) (component.Component, error) {
+            return Build(opts, args.(Arguments))
+        },
+    })
+}

@@ -1,0 +1,16 @@
+package kubestate
+
+import (
+    "github.com/prometheus/client_golang/prometheus"
+)
+
+type Arguments struct{}
+
+func (a *Arguments) SetToDefault()  {}
+func (a *Arguments) Validate() error { return nil }
+
+func Build(args Arguments) (prometheus.Registerer, error) {
+    reg := prometheus.NewRegistry()
+    // register metrics here
+    return reg, nil
+}
