@@ -12,7 +12,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/collector v0.51.0
 	github.com/IBM/sarama v1.45.1
-	github.com/KimMachineGun/automemlimit v0.6.1
+	github.com/KimMachineGun/automemlimit v0.7.0
 	github.com/Lusitaniae/apache_exporter v0.11.1-0.20220518131644-f9522724dab4
 	github.com/Masterminds/goutils v1.1.1
 	github.com/Masterminds/sprig/v3 v3.2.3
@@ -288,9 +288,13 @@ require (
 	k8s.io/client-go v0.32.2
 	k8s.io/component-base v0.32.1
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
+
+	//ksm
+	k8s.io/kube-state-metrics/v2 v2.15.0
+	k8s.io/utils v0.0.0-20241104163129-6fe5fd82f078
 	sigs.k8s.io/controller-runtime v0.20.3
 	sigs.k8s.io/yaml v1.4.0
+
 )
 
 require (
@@ -526,6 +530,7 @@ require (
 	github.com/dennwc/ioctl v1.0.0 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba // indirect
+	github.com/dgryski/go-jump v0.0.0-20211018200510-ba001c3ffce0 // indirect
 	github.com/dgryski/go-metro v0.0.0-20180109044635-280f6062b5bc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/digitalocean/godo v1.126.0 // indirect
@@ -802,6 +807,7 @@ require (
 	github.com/remeh/sizedwaitgroup v1.0.0 // indirect
 	github.com/renier/xmlrpc v0.0.0-20170708154548-ce4a1a486c03 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/safchain/ethtool v0.3.0 // indirect
 	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da // indirect
@@ -937,6 +943,7 @@ require (
 	howett.net/plist v1.0.0 // indirect
 	k8s.io/apiextensions-apiserver v0.32.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
+	k8s.io/sample-controller v0.32.1 // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.5.0 // indirect
 )
@@ -966,8 +973,8 @@ replace go.opentelemetry.io/collector/featuregate => github.com/grafana/opentele
 // Replace directives from Prometheus
 replace (
 	k8s.io/klog => github.com/simonpasquier/klog-gokit v0.3.0
-	// Prometheus uses v3.3.0, but we will get a compilation error from another module if we use it.
-	k8s.io/klog/v2 => github.com/simonpasquier/klog-gokit/v3 v3.5.0
+// Prometheus uses v3.3.0, but we will get a compilation error from another module if we use it.
+//k8s.io/klog/v2 => github.com/simonpasquier/klog-gokit/v3 v3.5.0
 )
 
 // TODO: remove replace directive once:
@@ -1008,6 +1015,7 @@ replace (
 	// TODO(marctc, mattdurham): Replace node_export with custom fork for multi usage. https://github.com/prometheus/node_exporter/pull/2812
 	// this commit is on the refactor_collectors branch in the grafana fork.
 	github.com/prometheus/node_exporter => github.com/grafana/node_exporter v0.18.1-grafana-r01.0.20250218170810-6300fab82195 //refactor_collectors
+
 )
 
 replace github.com/github/smimesign => github.com/grafana/smimesign v0.2.1-0.20220408144937-2a5adf3481d3
