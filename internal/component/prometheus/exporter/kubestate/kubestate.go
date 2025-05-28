@@ -21,7 +21,7 @@ import (
 	metricsstore "k8s.io/kube-state-metrics/v2/pkg/metrics_store"
 	"k8s.io/kube-state-metrics/v2/pkg/options"
 
-	"github.com/grafana/alloy/internal/static/integrations/cadvisor"
+	"github.com/grafana/alloy/internal/static/integrations/kubestate"
 	kube "k8s.io/client-go/kubernetes"
 )
 
@@ -42,7 +42,7 @@ func createExporter(opts component.Options, args component.Arguments, defaultIns
 }
 
 // TODO: replace cadvisor with kubestate
-func (a *Arguments) Convert() *cadvisor.Config {
+func (a *Arguments) Convert() *kubestate.Config {
 	// if len(a.PollFrequency) == 0 {
 	// 	a.PollFrequency = string{""}
 	// }
@@ -50,7 +50,8 @@ func (a *Arguments) Convert() *cadvisor.Config {
 	// 	a.PollTimeout = string{""}
 	// }
 
-	cfg := &cadvisor.Config{
+	cfg := &kubestate.Config{
+
 		// Client:         a.Client,
 		// PollFrequency:  a.PollFrequency,
 		// PollTimeout:    a.PollTimeout,
