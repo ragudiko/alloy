@@ -26,6 +26,7 @@ import (
 )
 
 func init() {
+	fmt.Printf("***************init method =============================\n")
 	component.Register(component.Registration{
 		Name:      "prometheus.exporter.kubestate",
 		Stability: featuregate.StabilityGenerallyAvailable,
@@ -37,12 +38,14 @@ func init() {
 }
 
 func createExporter(opts component.Options, args component.Arguments, defaultInstanceKey string) (integrations.Integration, string, error) {
+	fmt.Printf("createExporter method \n")
 	a := args.(Arguments)
 	return integrations.NewIntegrationWithInstanceKey(opts.Logger, a.Convert(), defaultInstanceKey)
 }
 
 // TODO: replace cadvisor with kubestate
 func (a *Arguments) Convert() *kubestate.Config {
+	fmt.Printf("Convert method \n")
 	// if len(a.PollFrequency) == 0 {
 	// 	a.PollFrequency = string{""}
 	// }
@@ -141,6 +144,7 @@ func (l *componentLeadership) isLeader() bool {
 
 // New creates a new prometheus.exporter.kubestate component.
 func New(o component.Options, args Arguments) (*Component, error) {
+	fmt.Printf("New method inside exporter \n")
 	clusterSvc, err := o.GetServiceData(cluster.ServiceName)
 	if err != nil {
 		return nil, fmt.Errorf("getting cluster service failed: %w", err)
@@ -164,6 +168,8 @@ func toResourceSet(resources []string) options.ResourceSet {
 
 // Run starts the prometheus.exporter.kubestate component.
 func (c *Component) Run(ctx context.Context) error {
+
+	fmt.Printf("Run method inside exporter \n")
 	// Create Kubernetes client config
 	config, err := c.args.Client.BuildRESTConfig(c.log)
 	if err != nil {
@@ -281,6 +287,7 @@ func (c *Component) Name() string {
 
 // Exports returns the values exported by the component.
 func (c *Component) Exports() map[string]interface{} {
+	fmt.Printf("Exports method inside exporter\n")
 	// return exporter.DefaultExports(c.opts)
 	return c.Exports()
 }

@@ -1,6 +1,9 @@
 package kubestate
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/go-kit/log"
 
 	// "github.com/google/cadvisor/cache/memory"
@@ -24,52 +27,81 @@ import (
 
 	// ksmcollectors "k8s.io/kube-state-metrics/v2/pkg/collectors"
 	// "k8s.io/kube-state-metrics/v2/pkg/factory"
-	"github.com/prometheus/client_golang/prometheus"
+
+	// "k8s.io/kube-state-metrics/pkg/options"
+
+	"k8s.io/kube-state-metrics/v2/pkg/app"
 	ksmconfig "k8s.io/kube-state-metrics/v2/pkg/options"
 )
 
 // NewIntegration creates a new kubestate integration
 func (c *Config) NewIntegration(logger log.Logger) (integrations.Integration, error) {
+	fmt.Printf("NewIntegration method inside integration\n")
 	return New(logger, c)
 }
 
 // New creates a new kubestate integration
 
-func New(logger log.Logger, c *Config) (integrations.Integration, error) {
-	// Set up Kubernetes client
-	// restCfg, err := k8sConfig.InClusterConfig()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// kubeClient, err := kubernetes.NewForConfig(restCfg)
-	// if err != nil {
-	// 	return nil, err
-	// }
+// func New(logger log.Logger, c *Config) (integrations.Integration, error) {
+// 	fmt.Printf("New method inside integration\n")
+// 	// Set up Kubernetes client
+// 	// restCfg, err := k8sConfig.InClusterConfig()
+// 	// if err != nil {
+// 	// 	return nil, err
+// 	// }
+// 	// kubeClient, err := kubernetes.NewForConfig(restCfg)
+// 	// if err != nil {
+// 	// 	return nil, err
+// 	// }
 
-	// Create kube-state-metrics config
+// 	// Create kube-state-metrics config
 
-	ksmCfg := ksmconfig.NewOptions()
-	includeNamespaces := []string{"default", "kube-system"}
-	ksmCfg.Namespaces = ksmconfig.NamespaceList{includeNamespaces[0], includeNamespaces[1]}
+// 	ksmCfg := ksmconfig.NewOptions()
+// 	includeNamespaces := []string{"default", "kube-system"}
+// 	ksmCfg.Namespaces = ksmconfig.NamespaceList{includeNamespaces[0], includeNamespaces[1]}
 
-	// ksmCfg.Resources = []string{"pods", "deployments"}
-	ksmCfg.Resources = ksmconfig.DefaultResources
-	// Get enabled metric generators
+// 	// ksmCfg.Resources = []string{"pods", "deployments"}
+// 	ksmCfg.Resources = ksmconfig.DefaultResources
+// 	// Get enabled metric generators
 
-	ksmCfg.MetricAllowlist = ksmconfig.MetricSet{
-		"kube_pod_info":                 {},
-		"kube_deployment_spec_replicas": {},
+// 	ksmCfg.MetricAllowlist = ksmconfig.MetricSet{
+// 		"kube_pod_info":                 {},
+// 		"kube_deployment_spec_replicas": {},
+// 	}
+// 	ksmCfg.MetricDenylist = ksmconfig.MetricSet{
+// 		"kube_pod_status_phase": {},
+// 	}
+
+// 	// Build collectors from generators
+// 	pcollectors := []prometheus.Collector{}
+
+// 	// ksmMetricsRegistry := prometheus.NewRegistry()
+// 	// ksmMetricsRegistry.MustRegister(
+// 	// 	collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+// 	// 	collectors.NewGoCollector(),
+// 	// )
+
+// 	// Create and return an integration
+// 	return integrations.NewCollectorIntegration(
+// 		c.Name(),
+// 		integrations.WithCollectors(pcollectors...),
+// 	), nil
+// }
+
+func New(logger log.Logger, cfg *Config) (integrations.Integration, error) {
+
+	ksmOpts := &ksmconfig.Options{
+		MetricAllowlist: cfg.MetricAllowlist,
+		// Namespaces:      cfg.Namespaces,
+		Resources: cfg.Resources,
+		Port:      8080,
 	}
-	ksmCfg.MetricDenylist = ksmconfig.MetricSet{
-		"kube_pod_status_phase": {},
-	}
 
-	// Build collectors from generators
-	collectors := []prometheus.Collector{}
-
-	// Create and return an integration
 	return integrations.NewCollectorIntegration(
-		c.Name(),
-		integrations.WithCollectors(collectors...),
+		cfg.Name(),
+		integrations.WithRunner(func(ctx context.Context) error {
+			app.RunKubeStateMetrics(ctx, ksmOpts)
+			return nil
+		}),
 	), nil
 }

@@ -1,12 +1,16 @@
 package kubestate
 
 import (
+	"fmt"
+
 	"github.com/go-kit/log"
 	"github.com/grafana/alloy/internal/component/common/kubernetes"
 	"github.com/grafana/alloy/internal/service/cluster"
 	"github.com/grafana/alloy/internal/static/integrations"
 	integrations_v2 "github.com/grafana/alloy/internal/static/integrations/v2"
 	"github.com/grafana/alloy/internal/static/integrations/v2/metricsutils"
+
+	"k8s.io/kube-state-metrics/v2/pkg/options"
 )
 
 const name = "kubestate"
@@ -27,7 +31,7 @@ type Config struct {
 
 	// List of Kubernetes resources to collect metrics for.
 	// If empty, all supported resources will be collected.
-	Resources []string `alloy:"resources,attr,optional"`
+	// Resources []string `alloy:"resources,attr,optional"`
 
 	// Clustering configuration for leader election
 	Clustering cluster.ComponentBlock `alloy:"clustering,block,optional"`
@@ -35,7 +39,11 @@ type Config struct {
 	HTTPListenPort int `river:"http_listen_port,attr"`
 
 	// Hold on to the logger passed to config.NewIntegration, to be passed to klog, as yet another unsafe global that needs to be set.
-	logger log.Logger //nolint:unused,structcheck // logger is only used on linux
+	logger log.Logger `alloy:"logger,attr,optional"` // logger is only used on linux
+
+	MetricAllowlist options.MetricSet     `alloy:"metric_allowlist,attr,optional"`
+	Namespaces      options.NamespaceList `alloy:"namespaces,attr,optional"`
+	Resources       options.ResourceSet   `alloy:"resources,attr,optional"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler for Config
@@ -62,6 +70,7 @@ func (c *Config) InstanceKey(agentKey string) (string, error) {
 }
 
 func init() {
+	fmt.Printf("init method inside exporter\n")
 	integrations.RegisterIntegration(&Config{})
 	integrations_v2.RegisterLegacy(&Config{}, integrations_v2.TypeSingleton, metricsutils.Shim)
 }
