@@ -36,7 +36,7 @@ type Config struct {
 	// Clustering configuration for leader election
 	Clustering cluster.ComponentBlock `alloy:"clustering,block,optional"`
 
-	HTTPListenPort int `river:"http_listen_port,attr"`
+	HTTPListenPort int `alloy:"http_listen_port,attr,optional"`
 
 	// Hold on to the logger passed to config.NewIntegration, to be passed to klog, as yet another unsafe global that needs to be set.
 	logger log.Logger `alloy:"logger,attr,optional"` // logger is only used on linux
@@ -44,6 +44,8 @@ type Config struct {
 	MetricAllowlist options.MetricSet     `alloy:"metric_allowlist,attr,optional"`
 	Namespaces      options.NamespaceList `alloy:"namespaces,attr,optional"`
 	Resources       options.ResourceSet   `alloy:"resources,attr,optional"`
+
+	KubeConfig string `alloy:"kube_config,attr,optional"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler for Config
@@ -70,7 +72,7 @@ func (c *Config) InstanceKey(agentKey string) (string, error) {
 }
 
 func init() {
-	fmt.Printf("init method inside exporter\n")
+	fmt.Printf("init method inside integration\n")
 	integrations.RegisterIntegration(&Config{})
 	integrations_v2.RegisterLegacy(&Config{}, integrations_v2.TypeSingleton, metricsutils.Shim)
 }

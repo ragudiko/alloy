@@ -26,7 +26,7 @@ import (
 )
 
 func init() {
-	fmt.Printf("***************init method =============================\n")
+	fmt.Printf("***************init method inside exporter=============================\n")
 	component.Register(component.Registration{
 		Name:      "prometheus.exporter.kubestate",
 		Stability: featuregate.StabilityGenerallyAvailable,
@@ -55,11 +55,15 @@ func (a *Arguments) Convert() *kubestate.Config {
 
 	cfg := &kubestate.Config{
 
-		// Client:         a.Client,
-		// PollFrequency:  a.PollFrequency,
-		// PollTimeout:    a.PollTimeout,
-		// Clustering:     a.Clustering,
-		// HTTPListenPort: a.HTTPListenPort,
+		Client:          a.Client,
+		PollFrequency:   a.PollFrequency,
+		PollTimeout:     a.PollTimeout,
+		Clustering:      a.Clustering,
+		HTTPListenPort:  a.HTTPListenPort,
+		Resources:       a.Resources,
+		MetricAllowlist: a.MetricAllowlist,
+		Namespaces:      a.Namespaces,
+		KubeConfig:      a.KubeConfig,
 	}
 
 	return cfg
@@ -84,12 +88,17 @@ type Arguments struct {
 
 	// List of Kubernetes resources to collect metrics for.
 	// If empty, all supported resources will be collected.
-	Resources []string `alloy:"resources,attr,optional"`
+	Resources options.ResourceSet `alloy:"resources,attr,optional"`
 
 	// Clustering configuration for leader election
 	Clustering cluster.ComponentBlock `alloy:"clustering,block,optional"`
 
 	HTTPListenPort int `river:"http_listen_port,attr"`
+
+	MetricAllowlist options.MetricSet     `alloy:"metric_allowlist,attr,optional"`
+	Namespaces      options.NamespaceList `alloy:"namespaces,attr,optional"`
+
+	KubeConfig string `alloy:"kube_config,attr,optional"`
 }
 
 func (a *Arguments) SetToDefault() {
@@ -167,7 +176,9 @@ func toResourceSet(resources []string) options.ResourceSet {
 }
 
 // Run starts the prometheus.exporter.kubestate component.
-func (c *Component) Run(ctx context.Context) error {
+func (c *Component) Run(ctx context.Context) error { // The `Run` method inside the `Component` struct of the
+	// `prometheus.exporter.kubestate` component is responsible for starting the
+	// component. Here is a breakdown of what the `Run` method is doing:
 
 	fmt.Printf("Run method inside exporter \n")
 	// Create Kubernetes client config
@@ -189,7 +200,7 @@ func (c *Component) Run(ctx context.Context) error {
 	// Create kube-state-metrics builder
 	ksmOptions := options.NewOptions()
 	if len(c.args.Resources) > 0 {
-		ksmOptions.Resources = toResourceSet(c.args.Resources)
+		ksmOptions.Resources = toResourceSet(c.args.Resources.AsSlice())
 	}
 
 	c.builder = builder.NewBuilder()

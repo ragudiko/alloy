@@ -81,20 +81,23 @@ func (c *Config) NewIntegration(logger log.Logger) (integrations.Integration, er
 // 	// 	collectors.NewGoCollector(),
 // 	// )
 
-// 	// Create and return an integration
-// 	return integrations.NewCollectorIntegration(
-// 		c.Name(),
-// 		integrations.WithCollectors(pcollectors...),
-// 	), nil
-// }
-
+//		// Create and return an integration
+//		return integrations.NewCollectorIntegration(
+//			c.Name(),
+//			integrations.WithCollectors(pcollectors...),
+//		), nil
+//	}
 func New(logger log.Logger, cfg *Config) (integrations.Integration, error) {
+
+	fmt.Printf("New method inside integration\n")
 
 	ksmOpts := &ksmconfig.Options{
 		MetricAllowlist: cfg.MetricAllowlist,
-		// Namespaces:      cfg.Namespaces,
-		Resources: cfg.Resources,
-		Port:      8080,
+		Namespaces:      cfg.Namespaces,
+		Resources:       cfg.Resources,
+		Port:            cfg.HTTPListenPort,
+		Config:          cfg.Client.KubeConfig,
+		Kubeconfig:      cfg.KubeConfig,
 	}
 
 	return integrations.NewCollectorIntegration(
