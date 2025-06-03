@@ -1,0 +1,3 @@
+prometheus.kubestate "example" {
+  message = "Custom component running!"
+}

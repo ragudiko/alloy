@@ -17,7 +17,6 @@ import (
 	"github.com/google/cadvisor/metrics"
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/utils/sysfs"
-	"k8s.io/klog/v2"
 	"k8s.io/utils/clock"
 
 	"github.com/grafana/alloy/internal/static/integrations"
@@ -84,7 +83,7 @@ func New(logger log.Logger, c *Config) (integrations.Integration, error) {
 	// Do gross global configs. This works, so long as there is only one instance of the cAdvisor integration
 	// per host.
 
-	klog.SetLogger(c.logger)
+	//klog.SetLogger(c.logger)
 	plugins := map[string]container.Plugin{
 		"containerd": containerd.NewPluginWithOptions(&containerd.Options{
 			ContainerdEndpoint:  c.Containerd,

@@ -165,4 +165,6 @@ import (
 	_ "github.com/grafana/alloy/internal/component/remote/vault"                             // Import remote.vault
 
 	_ "github.com/grafana/alloy/internal/util/otelfeaturegatefix" // Gracefully handle duplicate OTEL feature gates
+
+	_ "github.com/grafana/alloy/internal/component/prometheus/exporter/kubestate"
 )
