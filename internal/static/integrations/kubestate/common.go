@@ -9,8 +9,6 @@ import (
 	"github.com/grafana/alloy/internal/static/integrations"
 	integrations_v2 "github.com/grafana/alloy/internal/static/integrations/v2"
 	"github.com/grafana/alloy/internal/static/integrations/v2/metricsutils"
-
-	"k8s.io/kube-state-metrics/v2/pkg/options"
 )
 
 const name = "kubestate"
@@ -38,14 +36,18 @@ type Config struct {
 
 	HTTPListenPort int `alloy:"http_listen_port,attr,optional"`
 
+	Port int `alloy:"ksm_port,attr,optional"`
+
 	// Hold on to the logger passed to config.NewIntegration, to be passed to klog, as yet another unsafe global that needs to be set.
 	logger log.Logger `alloy:"logger,attr,optional"` // logger is only used on linux
 
-	MetricAllowlist options.MetricSet     `alloy:"metric_allowlist,attr,optional"`
-	Namespaces      options.NamespaceList `alloy:"namespaces,attr,optional"`
-	Resources       options.ResourceSet   `alloy:"resources,attr,optional"`
+	MetricAllowlist []string `alloy:"metric_allowlist,attr,optional"`
+	Namespaces      []string `alloy:"namespaces,attr,optional"`
+	Resources       []string `alloy:"resources,attr,optional"`
 
 	KubeConfig string `alloy:"kube_config,attr,optional"`
+
+	TelemetryPort int `alloy:"telemetry_port,attr,optional"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler for Config

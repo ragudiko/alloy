@@ -88,17 +88,21 @@ type Arguments struct {
 
 	// List of Kubernetes resources to collect metrics for.
 	// If empty, all supported resources will be collected.
-	Resources options.ResourceSet `alloy:"resources,attr,optional"`
+	Resources []string `alloy:"resources,attr,optional"`
 
 	// Clustering configuration for leader election
 	Clustering cluster.ComponentBlock `alloy:"clustering,block,optional"`
 
-	HTTPListenPort int `river:"http_listen_port,attr"`
+	HTTPListenPort int `alloy:"http_listen_port,attr"`
 
-	MetricAllowlist options.MetricSet     `alloy:"metric_allowlist,attr,optional"`
-	Namespaces      options.NamespaceList `alloy:"namespaces,attr,optional"`
+	Port int `alloy:"port,attr"`
+
+	MetricAllowlist []string `alloy:"metric_allowlist,attr,optional"`
+	Namespaces      []string `alloy:"namespaces,attr,optional"`
 
 	KubeConfig string `alloy:"kube_config,attr,optional"`
+
+	TelemetryPort int `alloy:"telemetry_port,attr,optional"`
 }
 
 func (a *Arguments) SetToDefault() {
@@ -152,20 +156,20 @@ func (l *componentLeadership) isLeader() bool {
 }
 
 // New creates a new prometheus.exporter.kubestate component.
-func New(o component.Options, args Arguments) (*Component, error) {
-	fmt.Printf("New method inside exporter \n")
-	clusterSvc, err := o.GetServiceData(cluster.ServiceName)
-	if err != nil {
-		return nil, fmt.Errorf("getting cluster service failed: %w", err)
-	}
+// func New(o component.Options, args Arguments) (*Component, error) {
+// 	fmt.Printf("New method inside exporter \n")
+// 	clusterSvc, err := o.GetServiceData(cluster.ServiceName)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("getting cluster service failed: %w", err)
+// 	}
 
-	return &Component{
-		opts:    o,
-		args:    args,
-		cluster: clusterSvc.(cluster.Cluster),
-		leader:  newComponentLeadership(o.ID, clusterSvc.(cluster.Cluster)),
-	}, nil
-}
+// 	return &Component{
+// 		opts:    o,
+// 		args:    args,
+// 		cluster: clusterSvc.(cluster.Cluster),
+// 		leader:  newComponentLeadership(o.ID, clusterSvc.(cluster.Cluster)),
+// 	}, nil
+// }
 
 func toResourceSet(resources []string) options.ResourceSet {
 	rs := make(options.ResourceSet)
@@ -200,7 +204,7 @@ func (c *Component) Run(ctx context.Context) error { // The `Run` method inside 
 	// Create kube-state-metrics builder
 	ksmOptions := options.NewOptions()
 	if len(c.args.Resources) > 0 {
-		ksmOptions.Resources = toResourceSet(c.args.Resources.AsSlice())
+		ksmOptions.Resources = toResourceSet(c.args.Resources)
 	}
 
 	c.builder = builder.NewBuilder()

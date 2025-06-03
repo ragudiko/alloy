@@ -40,6 +40,14 @@ func (c *Config) NewIntegration(logger log.Logger) (integrations.Integration, er
 	return New(logger, c)
 }
 
+func toResourceSet(resources []string) ksmconfig.ResourceSet {
+	rs := make(ksmconfig.ResourceSet)
+	for _, r := range resources {
+		rs[r] = struct{}{}
+	}
+	return rs
+}
+
 // New creates a new kubestate integration
 
 // func New(logger log.Logger, c *Config) (integrations.Integration, error) {
@@ -92,13 +100,20 @@ func New(logger log.Logger, cfg *Config) (integrations.Integration, error) {
 	fmt.Printf("New method inside integration\n")
 
 	ksmOpts := &ksmconfig.Options{
-		MetricAllowlist: cfg.MetricAllowlist,
-		Namespaces:      cfg.Namespaces,
-		Resources:       cfg.Resources,
-		Port:            cfg.HTTPListenPort,
-		Config:          cfg.Client.KubeConfig,
-		Kubeconfig:      cfg.KubeConfig,
+		// MetricAllowlist: cfg.MetricAllowlist,
+		Namespaces: cfg.Namespaces,
+		Resources:  toResourceSet(cfg.Resources),
+		Port:       cfg.Port,
+		// Config:     cfg.Client.KubeConfig,
+		Kubeconfig:    cfg.KubeConfig,
+		TelemetryPort: cfg.TelemetryPort,
 	}
+	fmt.Println("ksmOpts port Before\n", ksmOpts.Port)
+	ksmOpts.Port = 37425
+	ksmOpts.Host = "::"
+	ksmOpts.TelemetryPort = 9090
+	ksmOpts.TotalShards = 1
+	fmt.Println("ksmOpts port\n", ksmOpts.Port, " \nksmOpts.TelemetryPort\n", ksmOpts.TelemetryPort)
 
 	return integrations.NewCollectorIntegration(
 		cfg.Name(),
