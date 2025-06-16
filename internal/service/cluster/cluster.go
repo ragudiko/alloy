@@ -135,6 +135,9 @@ var (
 
 // New returns a new, unstarted instance of the cluster service.
 func New(opts Options) (*Service, error) {
+
+	fmt.Println("cluster.go - in new method\n")
+
 	var (
 		l = opts.Log
 		t = opts.Tracer
@@ -154,6 +157,9 @@ func New(opts Options) (*Service, error) {
 		Label:         opts.ClusterName,
 		EnableTLS:     opts.EnableTLS,
 	}
+
+	fmt.Println("ckitConfig.Name\n", ckitConfig.Name)
+	fmt.Println("opts.NodeName \n", opts.NodeName)
 
 	httpTransport := &http2.Transport{
 		AllowHTTP: true,
