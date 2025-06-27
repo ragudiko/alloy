@@ -158,16 +158,18 @@ func New(opts Options) (*Service, error) {
 		EnableTLS:     opts.EnableTLS,
 	}
 
-	fmt.Println("ckitConfig.Name\n", ckitConfig.Name)
-	fmt.Println("opts.NodeName \n", opts.NodeName)
+	fmt.Println("cluster.go ckitConfig.Name\n", ckitConfig.Name)
+	fmt.Println("cluster.go opts.NodeName \n", opts.NodeName)
 
 	httpTransport := &http2.Transport{
 		AllowHTTP: true,
 		DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
+			fmt.Println("cluster.go httpTransport")
 			return net.DialTimeout(network, addr, calcTimeout(ctx))
 		},
 	}
 	if opts.EnableTLS {
+		fmt.Println("cluster.go opts.EnableTLS")
 		httpTransport.AllowHTTP = false
 		tlsConfig, err := loadTLSConfigFromFile(opts.TLSCAPath, opts.TLSCertPath, opts.TLSKeyPath, opts.TLSServerName)
 		if err != nil {
@@ -209,6 +211,12 @@ func New(opts Options) (*Service, error) {
 		randGen:             rand.New(rand.NewSource(time.Now().UnixNano())),
 		notifyClusterChange: make(chan struct{}, 1),
 	}
+	fmt.Println("cluster.go node \n", node, node.CurrentState())
+
+	fmt.Println("cluster.go node.Metrics(), node.CurrentState().String() \n", node.Metrics(), node.CurrentState().String())
+
+	fmt.Println("cluster.go node.Peers() \n", node.Peers())
+
 	s.alloyCluster = newAlloyCluster(ckitConfig.Sharder, s.triggerClusterChangeNotification, opts, l)
 
 	return s, nil
