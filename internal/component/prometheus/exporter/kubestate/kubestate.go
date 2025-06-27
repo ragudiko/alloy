@@ -91,11 +91,3 @@ type Arguments struct {
 func (a *Arguments) SetToDefault() {
 	*a = DefaultArguments
 }
-
-// func toResourceSet(resources []string) options.ResourceSet {
-// 	rs := make(options.ResourceSet)
-// 	for _, r := range resources {
-// 		rs[r] = struct{}{}
-// 	}
-// 	return rs
-// }
