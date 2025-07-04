@@ -82,7 +82,31 @@ type Config struct {
 	// DiscoverPeers discovery.DiscoverFn
 
 	// ========================= clustering =========================
+
+	Cluster cluster.Cluster `alloy:"cluster,attr,,optional"`
 }
+
+// type Component struct {
+// 	log log.Logger
+// 	// opts component.Options
+// 	// args Arguments
+
+// 	// mimirClient       mimirClient.Interface
+// 	// k8sClient         kubernetes.Interface
+// 	// promClient        promVersioned.Interface
+// 	// namespaceSelector labels.Selector
+// 	// ruleSelector      labels.Selector
+
+// 	leader leadership
+// 	// eventProcessor *eventProcessor
+// 	// configUpdates  chan ConfigUpdate
+// 	// clusterUpdates chan struct{}
+// 	// ticker         *time.Ticker
+
+// 	// metrics   *metrics
+// 	// healthMut sync.RWMutex
+// 	// health    component.Health
+// }
 
 // UnmarshalYAML implements yaml.Unmarshaler for Config
 // func (c *Config) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -112,3 +136,9 @@ func init() {
 	integrations.RegisterIntegration(&Config{})
 	integrations_v2.RegisterLegacy(&Config{}, integrations_v2.TypeSingleton, metricsutils.Shim)
 }
+
+// func dummy(){
+// 	var leadership componentLeadership
+// 	l:=leadership.isLeader()
+// 	fmt.Println(l)
+// }

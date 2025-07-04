@@ -136,7 +136,7 @@ var (
 // New returns a new, unstarted instance of the cluster service.
 func New(opts Options) (*Service, error) {
 
-	fmt.Println("cluster.go - in new method\n")
+	fmt.Println("cluster.go - in new method")
 
 	var (
 		l = opts.Log
@@ -211,11 +211,26 @@ func New(opts Options) (*Service, error) {
 		randGen:             rand.New(rand.NewSource(time.Now().UnixNano())),
 		notifyClusterChange: make(chan struct{}, 1),
 	}
-	fmt.Println("cluster.go node \n", node, node.CurrentState())
+	fmt.Println("cluster.go node \n", node, " \n node.CurrentState()", node.CurrentState())
 
 	fmt.Println("cluster.go node.Metrics(), node.CurrentState().String() \n", node.Metrics(), node.CurrentState().String())
 
 	fmt.Println("cluster.go node.Peers() \n", node.Peers())
+	for i, p := range node.Peers() {
+		fmt.Printf("\nlocal node is owner - %d %t", i, p.Self)
+		if p.Self {
+			// os.Setenv("NODE_REGEX", p.Name)
+			fmt.Println("==============cluster.go p.Name \n", p.Name, "\n p.State ", p.State)
+			// fmt.Println("==============cluster.go NODE_REGEX \n", os.Getenv("NODE_REGEX"))
+		}
+	}
+
+	if node.Peers()[0].Self { // why always first entry in node.Peers()[0] ?
+		os.Setenv("NODE_REGEX", node.Peers()[0].Name)
+	}
+
+	pattern := os.Getenv("NODE_REGEX")
+	fmt.Println("\n===========================cluster.go NODE_REGEX =", pattern)
 
 	s.alloyCluster = newAlloyCluster(ckitConfig.Sharder, s.triggerClusterChangeNotification, opts, l)
 
