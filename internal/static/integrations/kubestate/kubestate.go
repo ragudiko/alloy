@@ -19,6 +19,8 @@ import (
 
 	"strings"
 
+	"regexp"
+
 	"k8s.io/kube-state-metrics/v2/pkg/app"
 	ksmconfig "k8s.io/kube-state-metrics/v2/pkg/options"
 )
@@ -67,21 +69,18 @@ func New(logger log.Logger, cfg *Config) (integrations.Integration, error) {
 		// EnableTLS: opts.EnableTLS,
 	}
 
-	fmt.Println("cluster.Cluster", ckitConfig.Name)
-	// ckitConfig.Name = os.Getenv("NODE_NAME")
-	fmt.Println("os.Getenv(\"NODE_NAME\")", ckitConfig.Name)
-	fmt.Println("ckitConfig Node:, ClusterName:", ckitConfig.Name, ckitConfig.Label)
-
 	ckitConfig.Name, _ = os.Hostname()
 	fmt.Println("os.Hostname()", ckitConfig.Name)
 	ckitConfig.Name = GetNodeName()
 	fmt.Println("GetNodeName()", GetNodeName())
+	pattern := os.Getenv("NODE_REGEX")
+	fmt.Println("pattern", pattern)
 
 	return integrations.NewCollectorIntegration(
 		cfg.Name(),
 		integrations.WithRunner(func(ctx context.Context) error {
-			if strings.Contains(ckitConfig.Name, "k3d-three-node-cluster-agent-2") ||
-				strings.Contains(ckitConfig.Name, "k3d-three-node-cluster-agent-0") {
+			requiredNode := GetNodeNameRegex(ckitConfig.Name, pattern)
+			if strings.Contains(ckitConfig.Name, requiredNode) {
 				app.RunKubeStateMetrics(ctx, ksmOpts)
 			}
 			return nil
@@ -98,4 +97,16 @@ func GetNodeName() string {
 		return "unknown"
 	}
 	return hostname
+}
+
+func GetNodeNameRegex(nodeName, regexPattern string) string {
+	matched, err := regexp.MatchString(regexPattern, nodeName)
+	if err != nil {
+		// Optionally log the regex error
+		return "node names not matching the regex - NODE_REGEX"
+	}
+	if matched {
+		return nodeName
+	}
+	return ""
 }
